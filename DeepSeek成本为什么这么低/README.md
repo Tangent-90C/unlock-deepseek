@@ -19,12 +19,40 @@
 
 ## KV Cache
 
+这里需要一些关于Transformer模型的知识，若之前没学过可以学习下我们的TinyTransformer项目进行入门: 
+https://github.com/datawhalechina/tiny-universe/tree/main/content/TinyTransformer
+
 大模型的生成过程是自回归式的，即每次都会输出一个新的token并拼接入序列，反复迭代直到结束。而在这推理过程中有一个步骤是计算自注意力，会对每个输入token计算其对应的**Q**(Query)、**K**(Key)和**V**(Value)，并用公式
 
 $$Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V$$ 
 
 计算注意力分数。而每次自注意力的计算都有大量的重复内容，因此可以将计算结果保存下来留着下次使用，而这就是KV Cache。
 
+<div align=center>
+  <img 
+    src="https://github.com/user-attachments/assets/5e13bf1a-e91b-451d-92db-932e89099ea1" 
+    alt="自注意力计算过程以及KV Cache"
+  />
+  <p>上半部分为自注意力计算过程，而下半部分为启用了KV Cache的自注意力计算过程。图源: <a>https://medium.com/@joaolages/kv-caching-explained-276520203249</a></p>
+</div>
+
+在上图中，紫色部分为KV Cache的缓存，即计算一次后就不再计算了。咱们以$QK^T$的元素个数作为计算次数，可以明显注意到
+
+- 未启用KV Cache的计算了1+4+9+16=30次
+- 启用了KV Cache的计算了1+2+3+4=10次
+
+在更长的文本序列中，通过KV Cache减少的计算量会更多。
+
+### KV Cache 的显存占用
+
+尽管可以KV Cache 减少了很多的计算量，但KV Cache所占用的显存也非常多，在模型推理阶段，当输入输出上下文长度之和比较小的时候，占用显存的大头主要是模型参数，但是当输入输出上下文长度之和很大的时候，占用显存的大头主要是 KV cache。
+
+设:
+
+- 输入序列长度为$s$
+- 输出序列长度为$o$
+- 注意力头有$n$层
+- 
 
 
 ## 多头潜在注意力(MLA)如何压缩KVCache的显存占用
